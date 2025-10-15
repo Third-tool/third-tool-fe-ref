@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DailyProgressModal from "./decks/DailyProgressModal.jsx";
+import LearningCalendar from "./components/LearningCalendar.jsx"; // ✅ 달력 컴포넌트 분리
+import { motion } from "framer-motion";
 
 const BASE_URL = import.meta.env.VITE_BACKEND_API_BASE_URL;
 
@@ -30,78 +32,84 @@ export default function HomePage() {
     const goToDeckPage = (mode) => navigate(`/decks?mode=${mode}`);
     const goToRecentDecks = () => navigate("/decks/recent");
 
-    // ✅ 추천 덱 클릭 시 해당 덱 상세 페이지로 이동
-    const handleClickRecommendation = (deckId) => {
-        navigate(`/decks/${deckId}?mode=THREE_DAY`);
-    };
-
     return (
         <div style={s.container}>
+            {/* 🔹 상단 헤더 */}
             <header style={s.header}>
-                <h2>The Third Tool</h2>
-                <nav>
-                    <button style={s.tab}>Home</button>
-                    <button style={s.tab}>Library</button>
+                <h1 style={s.logo}>🧠 The Third Tool</h1>
+                <nav style={s.nav}>
+                    <button style={s.navBtn}>Home</button>
+                    <button style={s.navBtn}>Library</button>
                     <button
+                        style={s.logoutBtn}
                         onClick={() => {
                             localStorage.removeItem("accessToken");
                             localStorage.removeItem("refreshToken");
                             navigate("/login");
                         }}
-                        style={s.logoutBtn}
                     >
                         Logout
                     </button>
                 </nav>
             </header>
 
-            <main style={s.main}>
-                {/* 프로젝트 선택 */}
-                <div style={s.section}>
-                    <div style={s.deckCard} onClick={() => goToDeckPage("THREE_DAY")}>
-                        <h3>3 Day Project</h3>
-                        <p>짧은 주기 집중 학습</p>
+            <main style={s.grid}>
+                {/* 🔸 3 Day & 영구 프로젝트 */}
+                <motion.div style={s.card} whileHover={{ scale: 1.02 }}>
+                    <div onClick={() => goToDeckPage("THREE_DAY")}>
+                        <h3 style={s.cardTitle}>3 Day Project</h3>
+                        <p style={s.subText}>Review: 3일 후</p>
                     </div>
+                </motion.div>
 
-                    <div style={s.deckCard} onClick={() => goToDeckPage("PERMANENT")}>
-                        <h3>영구 프로젝트</h3>
-                        <p>장기 복습 관리</p>
+                <motion.div style={s.card} whileHover={{ scale: 1.02 }}>
+                    <div onClick={() => goToDeckPage("PERMANENT")}>
+                        <h3 style={s.cardTitle}>영구 프로젝트</h3>
+                        <p style={s.subText}>언제든 복습</p>
                     </div>
-                </div>
+                </motion.div>
 
-                {/* 최근 덱 섹션 */}
-                <div style={s.section}>
-                    <h4>최근 학습한 덱</h4>
-                    <div
-                        style={{ ...s.deckCard, backgroundColor: "#2a2a2a" }}
-                        onClick={goToRecentDecks}
-                    >
-                        <h3>최근 학습 보기</h3>
-                        <p>마지막 복습 기준으로 정렬</p>
+                {/* 🔸 학습 캘린더 */}
+                <motion.div style={{ ...s.card, gridColumn: "3 / span 2" }} whileHover={{ scale: 1.01 }}>
+                    <LearningCalendar />
+                </motion.div>
+
+                {/* 🔸 최근 학습한 덱 */}
+                <motion.div style={s.card} whileHover={{ scale: 1.02 }}>
+                    <h4 style={s.sectionTitle}>최근 학습한 덱</h4>
+                    <div style={s.progressBox}>
+                        <h3 style={s.deckName}>3 Day Project</h3>
+                        <div style={s.progressBarOuter}>
+                            <div style={{ ...s.progressBarInner, width: "60%" }}></div>
+                        </div>
+                        <div style={s.progressFooter}>
+                            <span style={s.progressText}>진행률 60%</span>
+                            <button style={s.primaryBtn} onClick={goToRecentDecks}>
+                                이어서 학습 →
+                            </button>
+                        </div>
                     </div>
-                </div>
+                </motion.div>
+
+                {/* 🔸 추천 덱 */}
+                <motion.div style={s.card} whileHover={{ scale: 1.02 }}>
+                    <h4 style={s.sectionTitle}>추천 덱</h4>
+                    {recommendations.length === 0 ? (
+                        <p style={s.emptyText}>로딩 중...</p>
+                    ) : (
+                        recommendations.map((r, i) => (
+                            <div key={i} style={s.recItem}>
+                                <span>{r.deckName}</span>
+                                <div style={s.recBarOuter}>
+                                    <div style={{ ...s.recBarInner, width: `${r.score || 70}%` }}></div>
+                                </div>
+                                <span style={s.recScore}>{r.score || 70}%</span>
+                            </div>
+                        ))
+                    )}
+                </motion.div>
             </main>
 
-            {/* ✅ 추천 3줄 박스 */}
-            <div style={s.recommendationBox}>
-                <h4 style={s.recTitle}>📚 오늘의 추천 덱</h4>
-                {recommendations.length === 0 ? (
-                    <p style={s.recEmpty}>로딩 중...</p>
-                ) : (
-                    recommendations.map((r) => (
-                        <div
-                            key={r.deckId}
-                            style={s.recItem}
-                            onClick={() => handleClickRecommendation(r.deckId)}
-                        >
-                            <strong>{r.deckName}</strong>
-                            <p style={s.recReason}>{r.reason}</p>
-                        </div>
-                    ))
-                )}
-            </div>
-
-            {/* ✅ 진행률 모달 버튼 */}
             <DailyProgressModal />
         </div>
     );
@@ -109,85 +117,110 @@ export default function HomePage() {
 
 const s = {
     container: {
-        backgroundColor: "#121212",
-        color: "#fff",
+        backgroundColor: "#0b0b0b",
+        color: "white",
         minHeight: "100vh",
-        padding: "20px",
-        position: "relative",
+        padding: "30px 60px",
+        fontFamily: "Pretendard, sans-serif",
     },
     header: {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        borderBottom: "1px solid #333",
-        paddingBottom: 10,
+        marginBottom: 40,
     },
-    tab: {
+    logo: { fontSize: "1.5rem", fontWeight: "700", color: "#ff3b30" },
+    nav: { display: "flex", gap: "20px" },
+    navBtn: {
         background: "none",
-        color: "white",
         border: "none",
-        margin: "0 10px",
-        cursor: "pointer",
+        color: "#ccc",
         fontSize: "1rem",
+        cursor: "pointer",
+        transition: "color 0.3s",
     },
     logoutBtn: {
-        background: "#ff5252",
+        background: "#ff3b30",
         border: "none",
-        color: "white",
-        padding: "8px 16px",
-        borderRadius: 5,
+        borderRadius: "8px",
+        padding: "6px 14px",
+        color: "#fff",
         cursor: "pointer",
     },
-    main: { marginTop: 30 },
-    section: { marginBottom: 30 },
-    deckCard: {
-        backgroundColor: "#1f1f1f",
-        padding: 15,
-        borderRadius: 8,
-        marginBottom: 10,
-        cursor: "pointer",
-        transition: "0.2s",
+    grid: {
+        display: "grid",
+        gridTemplateColumns: "repeat(4, 1fr)",
+        gap: "25px",
     },
-
-    /** ✅ 추천 박스 */
-    recommendationBox: {
-        position: "fixed",
-        bottom: "80px",
-        right: "20px",
-        backgroundColor: "#1e1e1e",
+    card: {
+        background: "linear-gradient(180deg, #141414, #1b1b1b)",
+        borderRadius: "14px",
+        padding: "20px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+        transition: "transform 0.3s",
+    },
+    cardTitle: {
+        fontSize: "1.2rem",
+        fontWeight: "600",
+        color: "#fff",
+    },
+    subText: { color: "#aaa", marginTop: "6px", fontSize: "0.9rem" },
+    sectionTitle: {
+        color: "#fff",
+        fontSize: "1.1rem",
+        marginBottom: "15px",
+    },
+    deckName: { fontSize: "1.1rem", color: "#fff" },
+    progressBox: { marginTop: "10px" },
+    progressBarOuter: {
+        background: "#222",
         borderRadius: "10px",
-        padding: "12px 18px",
-        width: "270px",
-        boxShadow: "0 4px 10px rgba(0,0,0,0.4)",
-        fontSize: "0.85rem",
-        zIndex: 99,
+        height: "10px",
+        marginTop: "10px",
+        overflow: "hidden",
     },
-    recTitle: {
-        fontSize: "0.9rem",
-        marginBottom: "8px",
-        borderBottom: "1px solid #333",
-        paddingBottom: "4px",
-        color: "#ffcc66",
+    progressBarInner: {
+        background: "#ff3b30",
+        height: "100%",
+        borderRadius: "10px",
+        transition: "width 0.4s",
+    },
+    progressFooter: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginTop: "8px",
+    },
+    progressText: { color: "#ccc", fontSize: "0.85rem" },
+    primaryBtn: {
+        background: "#ff3b30",
+        border: "none",
+        padding: "6px 12px",
+        borderRadius: "8px",
+        color: "#fff",
+        cursor: "pointer",
+        fontSize: "0.85rem",
     },
     recItem: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
         marginBottom: "8px",
-        backgroundColor: "#2a2a2a",
-        borderRadius: "6px",
-        padding: "8px 10px",
-        cursor: "pointer",
-        transition: "all 0.25s ease",
     },
-    recItemHover: {
-        backgroundColor: "#383838",
-        transform: "scale(1.03)",
+    recBarOuter: {
+        background: "#222",
+        borderRadius: "8px",
+        width: "60%",
+        height: "8px",
+        overflow: "hidden",
+        margin: "0 10px",
     },
-    recReason: {
-        color: "#bbb",
-        fontSize: "0.75rem",
-        marginTop: "3px",
+    recBarInner: {
+        background: "#ff3b30",
+        height: "100%",
+        borderRadius: "8px",
+        transition: "width 0.4s ease",
     },
-    recEmpty: {
-        fontSize: "0.8rem",
-        color: "#777",
-    },
+    recScore: { fontSize: "0.85rem", color: "#ccc" },
+    emptyText: { color: "#666" },
 };

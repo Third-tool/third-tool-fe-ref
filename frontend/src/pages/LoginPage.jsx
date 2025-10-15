@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { motion } from "framer-motion";
 
 const BASE_URL = import.meta.env.VITE_BACKEND_API_BASE_URL;
 
@@ -8,12 +9,10 @@ export default function LoginPage() {
     const [form, setForm] = useState({ username: "", password: "" });
     const [error, setError] = useState("");
 
-    /** ✅ 입력 변경 핸들러 */
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
-    /** ✅ 일반 로그인 */
     async function handleLogin(e) {
         e.preventDefault();
         setError("");
@@ -24,146 +23,232 @@ export default function LoginPage() {
                 body: JSON.stringify(form),
             });
 
-            if (!res.ok) {
-                const errText = await res.text();
-                throw new Error(errText || "로그인 실패");
-            }
-
+            if (!res.ok) throw new Error(await res.text() || "로그인 실패");
             const data = await res.json();
+
             localStorage.setItem("accessToken", data.accessToken);
             localStorage.setItem("refreshToken", data.refreshToken);
-
-            alert("로그인 성공!");
             navigate("/home");
         } catch (err) {
             setError("로그인 실패: " + err.message);
         }
     }
 
-    /** ✅ 카카오 로그인: SDK → 인가 코드 발급 후 redirect */
     const handleKakaoLogin = () => {
         const redirectUri = "http://localhost:5173/oauth/kakao/callback";
-        const clientId = "596ba62433bf82278eeb36aa0b90974a"; // 카카오 REST API 키
-        const kakaoAuthUrl =
-            `https://kauth.kakao.com/oauth/authorize?` +
-            `client_id=${clientId}` +
+        const clientId = "596ba62433bf82278eeb36aa0b90974a";
+        window.location.href =
+            `https://kauth.kakao.com/oauth/authorize?client_id=${clientId}` +
             `&redirect_uri=${encodeURIComponent(redirectUri)}` +
             `&response_type=code`;
-        window.location.href = kakaoAuthUrl;
     };
 
-    /** ✅ 네이버 로그인도 동일한 구조로 확장 가능 */
     const handleNaverLogin = () => {
         const redirectUri = "http://localhost:5173/oauth/naver/callback";
-        const clientId = "KWQRiLrLcSIBgX9guEa_"; // 네이버 Client ID
-        const naverAuthUrl =
-            `https://nid.naver.com/oauth2.0/authorize?` +
-            `client_id=${clientId}` +
+        const clientId = "KWQRiLrLcSIBgX9guEa_";
+        window.location.href =
+            `https://nid.naver.com/oauth2.0/authorize?client_id=${clientId}` +
             `&redirect_uri=${encodeURIComponent(redirectUri)}` +
             `&response_type=code&state=test`;
-        window.location.href = naverAuthUrl;
     };
 
     return (
-        <div style={styles.container}>
-            <h2 style={{ marginBottom: 20 }}>로그인</h2>
+        <div style={s.container}>
+            {/* 🔹 브랜드 로고 */}
+            <motion.div
+                initial={{ opacity: 0, y: -30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                style={s.logoBox}
+            >
+                <div style={s.logoCircle}>TT</div>
+                <h1 style={s.logoTitle}>The Third Tool</h1>
+            </motion.div>
 
-            {/* ✅ 일반 로그인 폼 */}
-            <form onSubmit={handleLogin} style={styles.form}>
-                <input
-                    name="username"
-                    placeholder="아이디"
-                    value={form.username}
-                    onChange={handleChange}
-                    style={styles.input}
-                />
-                <input
-                    name="password"
-                    type="password"
-                    placeholder="비밀번호"
-                    value={form.password}
-                    onChange={handleChange}
-                    style={styles.input}
-                />
-                <button type="submit" style={styles.button}>
-                    로그인
-                </button>
-            </form>
+            {/* 🔹 로그인 카드 */}
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6 }}
+                style={s.card}
+            >
+                <h2 style={s.title}>로그인</h2>
 
-            {error && <p style={{ color: "red", marginTop: 10 }}>{error}</p>}
+                <form onSubmit={handleLogin} style={s.form}>
+                    <input
+                        name="username"
+                        placeholder="아이디"
+                        value={form.username}
+                        onChange={handleChange}
+                        style={s.input}
+                    />
+                    <input
+                        name="password"
+                        type="password"
+                        placeholder="비밀번호"
+                        value={form.password}
+                        onChange={handleChange}
+                        style={s.input}
+                    />
+                    <motion.button
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
+                        type="submit"
+                        style={s.loginBtn}
+                    >
+                        로그인
+                    </motion.button>
+                </form>
 
-            {/* ✅ 소셜 로그인 버튼들 */}
-            <div style={styles.socialBox}>
-                <p>또는 소셜 로그인</p>
-                <button onClick={handleKakaoLogin} style={styles.kakaoBtn}>
-                    카카오로 로그인
-                </button>
-                <button onClick={handleNaverLogin} style={styles.naverBtn}>
-                    네이버로 로그인
-                </button>
-            </div>
+                {error && <p style={s.errorText}>{error}</p>}
 
-            <p style={{ marginTop: 20 }}>
-                계정이 없나요? <Link to="/join">회원가입</Link>
-            </p>
+                <div style={s.dividerBox}>
+                    <div style={s.divider}></div>
+                    <span style={s.dividerText}>또는</span>
+                    <div style={s.divider}></div>
+                </div>
+
+                {/* 🔹 소셜 로그인 */}
+                <div style={s.socialBox}>
+                    <motion.button
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={handleKakaoLogin}
+                        style={s.kakaoBtn}
+                    >
+                        카카오로 로그인
+                    </motion.button>
+                    <motion.button
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={handleNaverLogin}
+                        style={s.naverBtn}
+                    >
+                        네이버로 로그인
+                    </motion.button>
+                </div>
+
+                <p style={s.bottomText}>
+                    계정이 없나요?{" "}
+                    <Link to="/join" style={s.link}>
+                        회원가입
+                    </Link>
+                </p>
+            </motion.div>
         </div>
     );
 }
 
-/* 🎨 스타일 */
-const styles = {
+const s = {
     container: {
+        background: "radial-gradient(circle at top, #111, #000)",
+        minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        height: "100vh",
-        backgroundColor: "#121212",
-        color: "white",
-        fontFamily: "sans-serif",
+        color: "#fff",
+        fontFamily: "Pretendard, sans-serif",
+    },
+    logoBox: {
+        display: "flex",
+        alignItems: "center",
+        marginBottom: 30,
+        gap: 10,
+    },
+    logoCircle: {
+        background: "#ff3b30",
+        borderRadius: "50%",
+        width: 45,
+        height: 45,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontWeight: "bold",
+    },
+    logoTitle: { fontSize: "1.4rem", fontWeight: "600" },
+    card: {
+        background: "linear-gradient(180deg, #141414, #1b1b1b)",
+        padding: "40px 50px",
+        borderRadius: "16px",
+        boxShadow: "0 0 20px rgba(255,255,255,0.05), 0 0 40px rgba(255,255,255,0.03)",
+        width: 360,
+        textAlign: "center",
+    },
+    title: {
+        fontSize: "1.4rem",
+        color: "#fff",
+        marginBottom: 25,
     },
     form: {
         display: "flex",
         flexDirection: "column",
-        gap: 10,
-        width: 260,
+        gap: 12,
+        marginBottom: 20,
     },
     input: {
-        padding: 10,
-        borderRadius: 5,
+        padding: "12px",
+        borderRadius: 10,
         border: "1px solid #333",
-        backgroundColor: "#1f1f1f",
-        color: "white",
+        background: "#1f1f1f",
+        color: "#fff",
+        fontSize: "0.95rem",
+        outline: "none",
+        transition: "border 0.2s",
     },
-    button: {
-        padding: 10,
-        borderRadius: 5,
+    loginBtn: {
+        background: "#ff3b30",
         border: "none",
-        backgroundColor: "#4CAF50",
-        color: "white",
+        padding: "12px",
+        borderRadius: 10,
+        color: "#fff",
         cursor: "pointer",
+        fontWeight: "600",
+        fontSize: "1rem",
         marginTop: 5,
     },
+    errorText: { color: "#ff4d4f", fontSize: "0.85rem", marginTop: 10 },
+    dividerBox: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        marginTop: 20,
+        marginBottom: 10,
+    },
+    divider: {
+        flex: 1,
+        height: "1px",
+        background: "#333",
+    },
+    dividerText: { color: "#777", fontSize: "0.8rem" },
     socialBox: {
-        marginTop: 30,
         display: "flex",
         flexDirection: "column",
         gap: 10,
-        alignItems: "center",
+        marginTop: 10,
     },
     kakaoBtn: {
         backgroundColor: "#FEE500",
+        color: "#3C1E1E",
         border: "none",
-        padding: "8px 16px",
-        borderRadius: 5,
+        padding: "10px 0",
+        borderRadius: 10,
         cursor: "pointer",
+        fontWeight: "600",
     },
     naverBtn: {
         backgroundColor: "#03C75A",
         border: "none",
         color: "white",
-        padding: "8px 16px",
-        borderRadius: 5,
+        padding: "10px 0",
+        borderRadius: 10,
         cursor: "pointer",
+        fontWeight: "600",
     },
+    bottomText: {
+        color: "#aaa",
+        fontSize: "0.85rem",
+        marginTop: 25,
+    },
+    link: { color: "#ff3b30", textDecoration: "none", fontWeight: "600" },
 };
