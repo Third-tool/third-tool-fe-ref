@@ -1,254 +1,281 @@
-import React, { useState } from "react";
+// =============================
+// src/pages/LoginPage.jsx
+// =============================
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
 const BASE_URL = import.meta.env.VITE_BACKEND_API_BASE_URL;
 
+function StyleGlobal() {
+    return (
+        <style>{`
+      html, body { margin:0!important; padding:0!important; background:#000!important; overflow-x:hidden!important; }
+      #root { background:#000!important; }
+    `}</style>
+    );
+}
+
+// 🔐 랜덤 state 생성 (네이버용)
+function genState(len = 16) {
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let s = "";
+    for (let i = 0; i < len; i++) s += chars[Math.floor(Math.random() * chars.length)];
+    return s;
+}
+
 export default function LoginPage() {
     const navigate = useNavigate();
     const [form, setForm] = useState({ username: "", password: "" });
     const [error, setError] = useState("");
+    const [remember, setRemember] = useState(
+        typeof localStorage !== "undefined" && !!localStorage.getItem("rememberUsername")
+    );
 
-    const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
-    };
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem("rememberUsername");
+            if (saved) setForm((f) => ({ ...f, username: saved }));
+        } catch (_) {}
+    }, []);
+
+    const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
     async function handleLogin(e) {
         e.preventDefault();
         setError("");
         try {
+            if (!BASE_URL) throw new Error("BASE_URL 누락");
+            const userField = import.meta.env.VITE_AUTH_USERNAME_FIELD || "username";
+            const payload = { [userField]: form.username, password: form.password };
+
             const res = await fetch(`${BASE_URL}/login`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(form),
+                headers: { "Content-Type": "application/json", Accept: "application/json" },
+                credentials: "include",
+                body: JSON.stringify(payload),
             });
 
-            if (!res.ok) throw new Error(await res.text() || "로그인 실패");
-            const data = await res.json();
+            const raw = await res.clone().text();
+            if (!res.ok) {
+                let detail;
+                try { detail = JSON.parse(raw); } catch { detail = raw; }
+                throw new Error((detail && detail.message) || detail || `HTTP ${res.status}`);
+            }
 
-            localStorage.setItem("accessToken", data.accessToken);
-            localStorage.setItem("refreshToken", data.refreshToken);
+            let data = null;
+            try { data = JSON.parse(raw); } catch {}
+            if (data?.accessToken) localStorage.setItem("accessToken", data.accessToken);
+            if (data?.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
+
+            try {
+                if (remember) localStorage.setItem("rememberUsername", form.username);
+                else localStorage.removeItem("rememberUsername");
+            } catch (_) {}
+
             navigate("/home");
         } catch (err) {
-            setError("로그인 실패: " + err.message);
+            setError(`로그인 실패: ${err?.message ?? err}`);
+            console.error("[LOGIN] error:", err);
         }
     }
 
+    // ✅ 카카오: 공식 인가 페이지로 리디렉트 (기본값: http://localhost:5173/oauth/kakao/callback)
     const handleKakaoLogin = () => {
-        const redirectUri = "http://localhost:5173/oauth/kakao/callback";
-        const clientId = "596ba62433bf82278eeb36aa0b90974a";
-        window.location.href =
-            `https://kauth.kakao.com/oauth/authorize?client_id=${clientId}` +
-            `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-            `&response_type=code`;
+        const clientId = import.meta.env.VITE_KAKAO_REST_KEY;
+        const redirectEnv = import.meta.env.VITE_KAKAO_REDIRECT_URI;
+        const redirectUri = redirectEnv || `http://localhost:5173/oauth/kakao/callback`;
+        if (!clientId) {
+            alert("Kakao REST_KEY 누락: VITE_KAKAO_REST_KEY");
+            return;
+        }
+        const url =
+            `https://kauth.kakao.com/oauth/authorize` +
+            `?response_type=code` +
+            `&client_id=${encodeURIComponent(clientId)}` +
+            `&redirect_uri=${encodeURIComponent(redirectUri)}`;
+        window.location.href = url;
     };
 
+    // ✅ 네이버: 공식 인가 페이지로 리디렉트 (state 포함 / 기본값: http://localhost:5173/oauth/naver/callback)
     const handleNaverLogin = () => {
-        const redirectUri = "http://localhost:5173/oauth/naver/callback";
-        const clientId = "KWQRiLrLcSIBgX9guEa_";
-        window.location.href =
-            `https://nid.naver.com/oauth2.0/authorize?client_id=${clientId}` +
+        const clientId = import.meta.env.VITE_NAVER_CLIENT_ID;
+        const redirectEnv = import.meta.env.VITE_NAVER_REDIRECT_URI;
+        const redirectUri = redirectEnv || `http://localhost:5173/oauth/naver/callback`;
+        if (!clientId) {
+            alert("Naver CLIENT_ID 누락: VITE_NAVER_CLIENT_ID");
+            return;
+        }
+        const state = genState();
+        try { sessionStorage.setItem("naver_oauth_state", state); } catch {}
+        const url =
+            `https://nid.naver.com/oauth2.0/authorize` +
+            `?response_type=code` +
+            `&client_id=${encodeURIComponent(clientId)}` +
             `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-            `&response_type=code&state=test`;
+            `&state=${encodeURIComponent(state)}`;
+        window.location.href = url;
     };
 
     return (
-        <div style={s.container}>
-            {/* 🔹 브랜드 로고 */}
-            <motion.div
-                initial={{ opacity: 0, y: -30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                style={s.logoBox}
-            >
-                <div style={s.logoCircle}>TT</div>
-                <h1 style={s.logoTitle}>The Third Tool</h1>
-            </motion.div>
+        <div style={ui.page}>
+            <StyleGlobal />
+            <div style={ui.bgGlow} />
 
-            {/* 🔹 로그인 카드 */}
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6 }}
-                style={s.card}
-            >
-                <h2 style={s.title}>로그인</h2>
+            <div style={ui.cardWrap}>
+                <div style={ui.card}>
+                    <h1 style={ui.title}>Login</h1>
 
-                <form onSubmit={handleLogin} style={s.form}>
-                    <input
-                        name="username"
-                        placeholder="아이디"
-                        value={form.username}
-                        onChange={handleChange}
-                        style={s.input}
-                    />
-                    <input
-                        name="password"
-                        type="password"
-                        placeholder="비밀번호"
-                        value={form.password}
-                        onChange={handleChange}
-                        style={s.input}
-                    />
-                    <motion.button
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.97 }}
-                        type="submit"
-                        style={s.loginBtn}
-                    >
-                        로그인
-                    </motion.button>
-                </form>
+                    <form onSubmit={handleLogin} style={ui.form}>
+                        <input
+                            name="username"
+                            placeholder="Email"
+                            value={form.username}
+                            onChange={handleChange}
+                            style={ui.input}
+                            autoComplete="username"
+                            onFocus={(e) => Object.assign(e.target.style, ui.inputFocus)}
+                            onBlur={(e) => Object.assign(e.target.style, { borderColor: "#262728", boxShadow: "none" })}
+                        />
+                        <input
+                            name="password"
+                            type="password"
+                            placeholder="Password"
+                            value={form.password}
+                            onChange={handleChange}
+                            style={ui.input}
+                            autoComplete="current-password"
+                            onFocus={(e) => Object.assign(e.target.style, ui.inputFocus)}
+                            onBlur={(e) => Object.assign(e.target.style, { borderColor: "#262728", boxShadow: "none" })}
+                        />
 
-                {error && <p style={s.errorText}>{error}</p>}
+                        <label style={ui.rememberRow}>
+                            <input
+                                type="checkbox"
+                                checked={remember}
+                                onChange={(e) => setRemember(e.target.checked)}
+                                style={ui.checkbox}
+                            />
+                            아이디 저장하기
+                        </label>
 
-                <div style={s.dividerBox}>
-                    <div style={s.divider}></div>
-                    <span style={s.dividerText}>또는</span>
-                    <div style={s.divider}></div>
+                        {error && <div style={ui.error}>{error}</div>}
+
+                        <motion.button type="submit" style={ui.loginBtn} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
+                            Login
+                        </motion.button>
+                    </form>
+
+                    <div style={ui.dividerRow}>
+                        <div style={ui.divider} />
+                        <span style={ui.dividerText}>또는</span>
+                        <div style={ui.divider} />
+                    </div>
+
+                    <div style={ui.socialBox}>
+                        <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} onClick={handleNaverLogin} style={ui.socialBtn}>
+              <span style={ui.iconWrap} aria-hidden>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 5h6.6l3.4 5.1V5H19v14h-6.6L9 13.9V19H5V5z" fill="#FFFFFF"/>
+                </svg>
+              </span>
+                            네이버로 로그인하기
+                        </motion.button>
+
+                        <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} onClick={handleKakaoLogin} style={ui.socialBtn}>
+              <span style={ui.iconWrap} aria-hidden>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 4c-4.97 0-9 3.13-9 7 0 2.53 1.72 4.75 4.3 5.98L6 21l3.02-2.02c.95.18 1.96.27 2.98.27 4.97 0 9-3.13 9-7s-4.03-7-9-7z" fill="#FFFFFF"/>
+                </svg>
+              </span>
+                            카카오톡으로 로그인하기
+                        </motion.button>
+                    </div>
+
+                    <div style={ui.bottomText}>
+                        계정이 없나요?{" "}
+                        <Link to="/join" style={ui.link}>회원가입</Link>
+                    </div>
                 </div>
-
-                {/* 🔹 소셜 로그인 */}
-                <div style={s.socialBox}>
-                    <motion.button
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={handleKakaoLogin}
-                        style={s.kakaoBtn}
-                    >
-                        카카오로 로그인
-                    </motion.button>
-                    <motion.button
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={handleNaverLogin}
-                        style={s.naverBtn}
-                    >
-                        네이버로 로그인
-                    </motion.button>
-                </div>
-
-                <p style={s.bottomText}>
-                    계정이 없나요?{" "}
-                    <Link to="/join" style={s.link}>
-                        회원가입
-                    </Link>
-                </p>
-            </motion.div>
+            </div>
         </div>
     );
 }
 
-const s = {
-    container: {
-        background: "radial-gradient(circle at top, #111, #000)",
+const ui = {
+    page: {
         minHeight: "100vh",
+        background: "linear-gradient(180deg, #0a0a0a 0%, #0f0f10 100%)",
         display: "flex",
-        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        color: "#fff",
-        fontFamily: "Pretendard, sans-serif",
+        padding: 24,
+        color: "#eaeaea",
+        position: "relative",
+        overflow: "hidden",
     },
-    logoBox: {
-        display: "flex",
-        alignItems: "center",
-        marginBottom: 30,
-        gap: 10,
-    },
-    logoCircle: {
-        background: "#ff3b30",
+    bgGlow: {
+        position: "absolute",
+        width: 520,
+        height: 520,
         borderRadius: "50%",
-        width: 45,
-        height: 45,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontWeight: "bold",
+        background: "radial-gradient(closest-side, rgba(229,57,53,.18), rgba(229,57,53,0) 70%)",
+        filter: "blur(20px)",
+        top: -120,
+        right: -120,
+        pointerEvents: "none",
     },
-    logoTitle: { fontSize: "1.4rem", fontWeight: "600" },
+    cardWrap: { width: "100%", maxWidth: 520 },
     card: {
-        background: "linear-gradient(180deg, #141414, #1b1b1b)",
-        padding: "40px 50px",
-        borderRadius: "16px",
-        boxShadow: "0 0 20px rgba(255,255,255,0.05), 0 0 40px rgba(255,255,255,0.03)",
-        width: 360,
-        textAlign: "center",
+        background: "rgba(18,18,18,.85)",
+        backdropFilter: "saturate(120%) blur(6px)",
+        borderRadius: 20,
+        border: "1px solid #242424",
+        padding: 32,
+        boxShadow: "0 14px 40px rgba(0,0,0,.45)",
     },
-    title: {
-        fontSize: "1.4rem",
-        color: "#fff",
-        marginBottom: 25,
-    },
-    form: {
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-        marginBottom: 20,
-    },
+    title: { fontSize: 34, fontWeight: 900, color: "#fff", margin: "6px 0 20px", letterSpacing: -0.3 },
+    form: { display: "flex", flexDirection: "column", gap: 12 },
     input: {
-        padding: "12px",
-        borderRadius: 10,
-        border: "1px solid #333",
-        background: "#1f1f1f",
-        color: "#fff",
-        fontSize: "0.95rem",
+        background: "#111315",
+        border: "1px solid #262728",
+        color: "#f3f3f3",
+        padding: "14px 16px",
+        borderRadius: 14,
         outline: "none",
-        transition: "border 0.2s",
+        fontSize: 14,
+        transition: "border-color .15s ease, box-shadow .15s ease",
+        boxShadow: "inset 0 0 0 0 rgba(229,57,53,0)",
     },
+    inputFocus: { borderColor: "#e53935", boxShadow: "0 0 0 3px rgba(229,57,53,.15)" },
+    rememberRow: { display: "flex", alignItems: "center", gap: 8, color: "#bdbdbd", margin: "6px 0 4px", fontSize: 14 },
+    checkbox: { width: 16, height: 16, accentColor: "#e53935" },
+    error: { color: "#ff6b6b", background: "#2a0f10", border: "1px solid #4a1f21", padding: "8px 10px", borderRadius: 10, fontSize: 13 },
     loginBtn: {
-        background: "#ff3b30",
-        border: "none",
-        padding: "12px",
-        borderRadius: 10,
+        marginTop: 8,
+        background: "linear-gradient(135deg, #ff4b44, #e53935)",
         color: "#fff",
-        cursor: "pointer",
-        fontWeight: "600",
-        fontSize: "1rem",
-        marginTop: 5,
-    },
-    errorText: { color: "#ff4d4f", fontSize: "0.85rem", marginTop: 10 },
-    dividerBox: {
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        marginTop: 20,
-        marginBottom: 10,
-    },
-    divider: {
-        flex: 1,
-        height: "1px",
-        background: "#333",
-    },
-    dividerText: { color: "#777", fontSize: "0.8rem" },
-    socialBox: {
-        display: "flex",
-        flexDirection: "column",
-        gap: 10,
-        marginTop: 10,
-    },
-    kakaoBtn: {
-        backgroundColor: "#FEE500",
-        color: "#3C1E1E",
         border: "none",
-        padding: "10px 0",
-        borderRadius: 10,
+        padding: "14px 0",
+        borderRadius: 14,
         cursor: "pointer",
-        fontWeight: "600",
+        fontWeight: 900,
+        fontSize: 16,
+        boxShadow: "0 8px 24px rgba(229,57,53,.35)",
     },
-    naverBtn: {
-        backgroundColor: "#03C75A",
-        border: "none",
-        color: "white",
-        padding: "10px 0",
-        borderRadius: 10,
-        cursor: "pointer",
-        fontWeight: "600",
+    dividerRow: { display: "flex", alignItems: "center", gap: 12, marginTop: 18 },
+    divider: { flex: 1, height: 1, background: "#262626" },
+    dividerText: { color: "#9a9a9a", fontSize: 12, letterSpacing: ".02em" },
+    socialBox: { display: "flex", flexDirection: "column", gap: 12, marginTop: 14 },
+    socialBtn: {
+        display: "flex", alignItems: "center", gap: 12, justifyContent: "flex-start",
+        background: "#111315", color: "#f0f0f0", border: "1px solid #2a2a2a",
+        padding: "14px 16px", borderRadius: 16, cursor: "pointer", fontWeight: 800, fontSize: 15,
     },
-    bottomText: {
-        color: "#aaa",
-        fontSize: "0.85rem",
-        marginTop: 25,
+    iconWrap: {
+        width: 28, height: 28, minWidth: 28, minHeight: 28, borderRadius: 8,
+        background: "#1a1a1a", border: "1px solid #2a2a2a", display: "flex", alignItems: "center", justifyContent: "center",
     },
-    link: { color: "#ff3b30", textDecoration: "none", fontWeight: "600" },
+    bottomText: { color: "#bdbdbd", fontSize: 13, marginTop: 18, textAlign: "center" },
+    link: { color: "#ff4d4d", textDecoration: "none", fontWeight: 900 },
 };

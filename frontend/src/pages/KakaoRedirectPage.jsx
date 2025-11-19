@@ -1,3 +1,6 @@
+// =============================
+// src/pages/KakaoRedirectPage.jsx
+// =============================
 import React, { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -29,7 +32,6 @@ export default function KakaoRedirectPage() {
                 localStorage.setItem("accessToken", data.accessToken);
                 localStorage.setItem("refreshToken", data.refreshToken);
 
-                alert("카카오 로그인 성공!");
                 navigate("/home");
             } catch (err) {
                 alert("로그인 실패: " + err.message);

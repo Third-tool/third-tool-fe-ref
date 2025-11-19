@@ -1,3 +1,6 @@
+// =============================
+// src/pages/NaverRedirectPage.jsx
+// =============================
 import React, { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -9,12 +12,23 @@ export default function NaverRedirectPage() {
 
     useEffect(() => {
         const code = searchParams.get("code");
-        const state = searchParams.get("state"); // 네이버는 state 파라미터도 필수
+        const state = searchParams.get("state"); // 네이버는 state 필수
+
         if (!code) {
             alert("인가 코드가 없습니다.");
             navigate("/login");
             return;
         }
+
+        // 간단한 CSRF 체크: 로그인 페이지에서 저장한 state 비교
+        try {
+            const original = sessionStorage.getItem("naver_oauth_state");
+            if (original && state && original !== state) {
+                alert("OAuth state 불일치. 다시 시도해주세요.");
+                navigate("/login");
+                return;
+            }
+        } catch {}
 
         async function exchangeCodeForToken() {
             try {
@@ -30,7 +44,6 @@ export default function NaverRedirectPage() {
                 localStorage.setItem("accessToken", data.accessToken);
                 localStorage.setItem("refreshToken", data.refreshToken);
 
-                alert("네이버 로그인 성공!");
                 navigate("/home");
             } catch (err) {
                 alert("로그인 실패: " + err.message);

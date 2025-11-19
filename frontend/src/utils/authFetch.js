@@ -23,26 +23,29 @@ export async function refreshAccessToken() {
 // ✅ AccessToken 자동 부착 + 만료 시에만 자동 Refresh 처리
 export async function fetchWithAccess(url, options = {}) {
     let accessToken = localStorage.getItem("accessToken");
-
     if (!options.headers) options.headers = {};
+
+    // ✅ Authorization 헤더 추가
     options.headers["Authorization"] = `Bearer ${accessToken}`;
-    options.headers["Content-Type"] = options.headers["Content-Type"] || "application/json";
+
+    // ✅ FormData일 경우 Content-Type 제거 (브라우저가 자동 설정)
+    if (!(options.body instanceof FormData)) {
+        options.headers["Content-Type"] = options.headers["Content-Type"] || "application/json";
+    } else {
+        // 혹시라도 상위에서 세팅된 Content-Type이 있으면 제거
+        delete options.headers["Content-Type"];
+    }
 
     let response = await fetch(url, options);
 
-    // ✅ 401 응답 시에만 refresh 로직 고려
+    // ✅ 401 응답 시 Refresh 시도
     if (response.status === 401) {
-        // 서버에서 만료 사유를 구분하기 위해 JSON 메시지 추출
         let errorData = null;
         try {
             errorData = await response.clone().json();
-        } catch (_) {
-            // body가 비어있을 수도 있음
-        }
+        } catch (_) {}
 
         const message = errorData?.message?.toLowerCase() || "";
-
-        // ✅ 진짜 만료된 경우에만 refresh 시도
         if (message.includes("expired") || message.includes("만료")) {
             try {
                 console.warn("⚠️ AccessToken 만료 → Refresh 시도 중...");

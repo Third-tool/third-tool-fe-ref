@@ -1,0 +1,206 @@
+/* src/components/layout/SidebarNav.css */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    background-color: var(--bg-sidebar);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 100;
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    height: var(--header-height);
+    flex-shrink: 0;
+}
+
+.sidebar-logo {
+    font-size: 20px;
+    font-weight: 800;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.sidebar-toggle {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+}
+.sidebar-toggle:hover {
+    background-color: var(--bg-hover);
+}
+
+.sidebar-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex-grow: 1;
+    overflow-y: auto; /* 네비게이션 + 푸터 스크롤 */
+    overflow-x: hidden;
+}
+
+.sidebar-nav {
+    padding: 0 12px;
+    flex-grow: 1;
+}
+
+/* --- 하위 컴포넌트 스타일 --- */
+
+/* 워크스페이스 버튼 */
+.ws-btn {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 8px;
+    border-radius: 6px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    margin-bottom: 16px;
+}
+.ws-btn:hover {
+    background-color: var(--bg-hover);
+}
+.ws-btn.collapsed {
+    justify-content: center;
+}
+.ws-badge {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    background-color: #f66957; /* Accent */
+    color: white;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+.ws-text {
+    flex-grow: 1;
+    text-align: left;
+    margin-left: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+.ws-caret {
+    color: var(--text-secondary);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+/* 네비게이션 아이템 */
+.side-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+.side-item:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+}
+.side-item.active {
+    background-color: var(--bg-active);
+    color: var(--text-primary);
+    font-weight: 600;
+}
+.side-item.collapsed {
+    justify-content: center;
+    padding: 8px;
+}
+.side-item-icon {
+    font-size: 18px;
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+}
+.side-item-text {
+    margin-left: 12px;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+/* 섹션 헤더 */
+.section-header {
+    padding: 16px 12px 8px;
+}
+.section-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.nav-separator {
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 12px;
+}
+
+/* --- 푸터 스타일 --- */
+.sidebar-footer {
+    padding: 12px;
+    flex-shrink: 0;
+}
+.plan-box {
+    background-color: #3e2e00; /* Yellow-dark bg */
+    border: 1px solid #7c5c00;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 12px;
+    overflow: hidden; /* for height animation */
+}
+.plan-title {
+    color: #ffca28; /* Yellow */
+    font-weight: 700;
+    font-size: 14px;
+    white-space: nowrap;
+}
+.plan-desc {
+    color: #ffe082;
+    font-size: 12px;
+    margin-top: 4px;
+    white-space: nowrap;
+}
+
+.bottom-icons {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+.icon-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+}
+.icon-btn:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+}
