@@ -1,9 +1,16 @@
+// src/utils/authFetch.js
+const BASE_URL = import.meta.env.VITE_BACKEND_API_BASE_URL;
 
+if (!BASE_URL) {
+    console.warn("⚠️ VITE_BACKEND_API_BASE_URL 가 설정되지 않았습니다.");
+}
+
+/** 🔄 Refresh 토큰으로 AccessToken 재발급 */
 export async function refreshAccessToken() {
     const refreshToken = localStorage.getItem("refreshToken");
     if (!refreshToken) throw new Error("RefreshToken이 없습니다.");
 
-    const response = await fetch("http://localhost:8080/jwt/refresh", {
+    const response = await fetch(`${BASE_URL}/jwt/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken }),
@@ -20,25 +27,26 @@ export async function refreshAccessToken() {
     return data.accessToken;
 }
 
-// ✅ AccessToken 자동 부착 + 만료 시에만 자동 Refresh 처리
-export async function fetchWithAccess(url, options = {}) {
+/** ✅ AccessToken 자동 부착 + 401 시 자동 Refresh 처리 */
+export async function fetchWithAccess(pathOrUrl, options = {}) {
+    // path(`/api/...`) 를 넘겨도 되고, 완전한 url(`https://...`)을 넘겨도 되게 처리
+    const isAbsolute = /^https?:\/\//i.test(pathOrUrl);
+    const url = isAbsolute ? pathOrUrl : `${BASE_URL}${pathOrUrl}`;
+
     let accessToken = localStorage.getItem("accessToken");
     if (!options.headers) options.headers = {};
 
-    // ✅ Authorization 헤더 추가
     options.headers["Authorization"] = `Bearer ${accessToken}`;
 
-    // ✅ FormData일 경우 Content-Type 제거 (브라우저가 자동 설정)
+    // FormData가 아니면 Content-Type 기본 JSON
     if (!(options.body instanceof FormData)) {
         options.headers["Content-Type"] = options.headers["Content-Type"] || "application/json";
     } else {
-        // 혹시라도 상위에서 세팅된 Content-Type이 있으면 제거
         delete options.headers["Content-Type"];
     }
 
     let response = await fetch(url, options);
 
-    // ✅ 401 응답 시 Refresh 시도
     if (response.status === 401) {
         let errorData = null;
         try {
@@ -46,7 +54,9 @@ export async function fetchWithAccess(url, options = {}) {
         } catch (_) {}
 
         const message = errorData?.message?.toLowerCase() || "";
-        if (message.includes("expired") || message.includes("만료")) {
+        const isExpired = message.includes("expired") || message.includes("만료");
+
+        if (isExpired) {
             try {
                 console.warn("⚠️ AccessToken 만료 → Refresh 시도 중...");
                 accessToken = await refreshAccessToken();
@@ -59,7 +69,7 @@ export async function fetchWithAccess(url, options = {}) {
                 window.location.href = "/login";
             }
         } else {
-            console.error("❌ 인증 실패: 토큰 만료 아님 (권한 오류 또는 잘못된 토큰)");
+            console.error("❌ 인증 실패: 토큰 만료는 아니고, 권한 오류 등");
             throw new Error("401 Unauthorized: Access denied");
         }
     }
