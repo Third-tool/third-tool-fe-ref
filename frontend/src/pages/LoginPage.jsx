@@ -84,7 +84,10 @@ export default function LoginPage() {
     const handleKakaoLogin = () => {
         const clientId = import.meta.env.VITE_KAKAO_REST_KEY;
         const redirectEnv = import.meta.env.VITE_KAKAO_REDIRECT_URI;
-        const redirectUri = redirectEnv || `http://localhost:5173/oauth/kakao/callback`;
+        const redirectUri = redirectEnv || `${window.location.origin}/oauth/kakao/callback`;
+
+        console.log("[KAKAO LOGIN] redirectUri =", redirectUri);
+
         if (!clientId) {
             alert("Kakao REST_KEY 누락: VITE_KAKAO_REST_KEY");
             return;
@@ -97,23 +100,31 @@ export default function LoginPage() {
         window.location.href = url;
     };
 
-    // ✅ 네이버: 공식 인가 페이지로 리디렉트 (state 포함 / 기본값: http://localhost:5173/oauth/naver/callback)
+    // ✅ 네이버: 공식 인가 페이지로 리디렉트
     const handleNaverLogin = () => {
         const clientId = import.meta.env.VITE_NAVER_CLIENT_ID;
         const redirectEnv = import.meta.env.VITE_NAVER_REDIRECT_URI;
-        const redirectUri = redirectEnv || `http://localhost:5173/oauth/naver/callback`;
+
+        // env 가 있으면 그 값 사용, 없으면 현재 origin 기준으로 자동 생성
+        const redirectUri = redirectEnv || `${window.location.origin}/oauth/naver/callback`;
+
         if (!clientId) {
             alert("Naver CLIENT_ID 누락: VITE_NAVER_CLIENT_ID");
             return;
         }
+
         const state = genState();
-        try { sessionStorage.setItem("naver_oauth_state", state); } catch {}
+        try {
+            sessionStorage.setItem("naver_oauth_state", state);
+        } catch {}
+
         const url =
             `https://nid.naver.com/oauth2.0/authorize` +
             `?response_type=code` +
             `&client_id=${encodeURIComponent(clientId)}` +
             `&redirect_uri=${encodeURIComponent(redirectUri)}` +
             `&state=${encodeURIComponent(state)}`;
+
         window.location.href = url;
     };
 
