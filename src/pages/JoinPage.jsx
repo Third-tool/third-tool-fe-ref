@@ -20,8 +20,8 @@ export default function JoinPage() {
         username: "",       // 로그인 아이디 (이메일)
         password: "",
         confirmPassword: "",
-        displayName: "",    // 닉네임
-        email: "",          // 선택: 별도 이메일 필드(백엔드에서 쓰면 활용)
+        nickname: "",       // ✅ 닉네임 (백엔드 DTO에 맞춤)
+        email: "",          // 선택: 연락용 이메일
     });
     const [agree, setAgree] = useState(false);
     const [error, setError] = useState("");
@@ -42,7 +42,7 @@ export default function JoinPage() {
         const looksLikeEmail = /\S+@\S+\.\S+/.test(uname);
         if (!looksLikeEmail) return "아이디는 이메일 형식으로 입력해 주세요.";
 
-        if (form.displayName.trim().length < 2)
+        if (form.nickname.trim().length < 2)
             return "닉네임은 2자 이상 입력해 주세요.";
 
         if (pwd.length < 8)
@@ -60,6 +60,10 @@ export default function JoinPage() {
 
         if (!BASE_URL)
             return "BASE_URL 누락";
+
+        // (선택) 이미 존재하는 아이디면 가입 막기
+        if (exist === true)
+            return "이미 사용 중인 아이디입니다. 다른 아이디를 입력해 주세요.";
 
         return null;
     }
@@ -88,8 +92,8 @@ export default function JoinPage() {
             let data;
             try { data = JSON.parse(raw); } catch { data = raw; }
 
-            // 백엔드에서 boolean을 반환한다고 가정
-            const exists = !!data;
+            // 백엔드에서 Boolean(true/false) 반환
+            const exists = data === true;
             setExist(exists);
             alert(exists ? "이미 존재하는 아이디입니다." : "사용 가능한 아이디입니다.");
         } catch (err) {
@@ -116,9 +120,8 @@ export default function JoinPage() {
             const payload = {
                 [userField]: form.username.trim(),
                 password: form.password,
-                displayName: form.displayName.trim(),
-                // 백엔드가 email 필드를 지원하면 같이 전송
-                email: form.email.trim() || undefined,
+                nickname: form.nickname.trim(),         // ✅ 백엔드 DTO 필드명으로 전송
+                email: form.email.trim() || undefined,  // 선택값
             };
 
             const res = await fetch(`${BASE_URL}/user`, {
@@ -135,14 +138,13 @@ export default function JoinPage() {
                 throw new Error((detail && detail.message) || detail || `HTTP ${res.status}`);
             }
 
-            // 서버가 토큰을 바로 내려주는 경우 저장
+            // 서버가 토큰을 바로 내려주는 경우 저장 (현재는 id만 주지만 혹시 몰라 유지)
             try {
                 const data = JSON.parse(raw);
                 if (data?.accessToken) localStorage.setItem("accessToken", data.accessToken);
                 if (data?.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
             } catch (_) {}
 
-            // 가입 완료 후 홈으로 이동 (원하면 "/login" 으로 변경)
             navigate("/home");
         } catch (err) {
             console.error("[SIGNUP] error:", err);
@@ -152,7 +154,7 @@ export default function JoinPage() {
         }
     }
 
-    // ✅ 카카오: 공식 인가 페이지로 리디렉트 (LoginPage와 동일 방식)
+    // ✅ 카카오: 공식 인가 페이지로 리디렉트
     const handleKakaoStart = () => {
         const clientId = import.meta.env.VITE_KAKAO_REST_KEY;
         const redirectEnv = import.meta.env.VITE_KAKAO_REDIRECT_URI;
@@ -172,7 +174,7 @@ export default function JoinPage() {
         window.location.href = url;
     };
 
-    // ✅ 네이버: 공식 인가 페이지로 리디렉트 (LoginPage와 동일 방식)
+    // ✅ 네이버: 공식 인가 페이지로 리디렉트
     const handleNaverStart = () => {
         const clientId = import.meta.env.VITE_NAVER_CLIENT_ID;
         const redirectEnv = import.meta.env.VITE_NAVER_REDIRECT_URI;
@@ -216,7 +218,10 @@ export default function JoinPage() {
                                 autoComplete="email"
                                 onFocus={(e) => Object.assign(e.target.style, ui.inputFocus)}
                                 onBlur={(e) =>
-                                    Object.assign(e.target.style, { borderColor: "#262728", boxShadow: "none" })
+                                    Object.assign(e.target.style, {
+                                        borderColor: "#262728",
+                                        boxShadow: "none",
+                                    })
                                 }
                             />
                             <button
@@ -236,26 +241,31 @@ export default function JoinPage() {
                                 중복 확인
                             </button>
                         </div>
+
                         {exist !== null && (
                             <div style={{ fontSize: 12, color: exist ? "#ff6b6b" : "#6dd36d" }}>
                                 {exist ? "이미 사용 중인 아이디입니다." : "사용 가능한 아이디입니다."}
                             </div>
                         )}
 
+                        {/* ✅ 닉네임 필드 name="nickname" */}
                         <input
-                            name="displayName"
+                            name="nickname"
                             placeholder="닉네임"
-                            value={form.displayName}
+                            value={form.nickname}
                             onChange={handleChange}
                             style={ui.input}
                             autoComplete="nickname"
                             onFocus={(e) => Object.assign(e.target.style, ui.inputFocus)}
                             onBlur={(e) =>
-                                Object.assign(e.target.style, { borderColor: "#262728", boxShadow: "none" })
+                                Object.assign(e.target.style, {
+                                    borderColor: "#262728",
+                                    boxShadow: "none",
+                                })
                             }
                         />
 
-                        {/* 선택 이메일(프로필용) */}
+                        {/* 선택 이메일 */}
                         <input
                             name="email"
                             placeholder="연락용 이메일 (선택)"
@@ -265,7 +275,10 @@ export default function JoinPage() {
                             autoComplete="email"
                             onFocus={(e) => Object.assign(e.target.style, ui.inputFocus)}
                             onBlur={(e) =>
-                                Object.assign(e.target.style, { borderColor: "#262728", boxShadow: "none" })
+                                Object.assign(e.target.style, {
+                                    borderColor: "#262728",
+                                    boxShadow: "none",
+                                })
                             }
                         />
 
@@ -279,7 +292,10 @@ export default function JoinPage() {
                             autoComplete="new-password"
                             onFocus={(e) => Object.assign(e.target.style, ui.inputFocus)}
                             onBlur={(e) =>
-                                Object.assign(e.target.style, { borderColor: "#262728", boxShadow: "none" })
+                                Object.assign(e.target.style, {
+                                    borderColor: "#262728",
+                                    boxShadow: "none",
+                                })
                             }
                         />
                         <input
@@ -292,7 +308,10 @@ export default function JoinPage() {
                             autoComplete="new-password"
                             onFocus={(e) => Object.assign(e.target.style, ui.inputFocus)}
                             onBlur={(e) =>
-                                Object.assign(e.target.style, { borderColor: "#262728", boxShadow: "none" })
+                                Object.assign(e.target.style, {
+                                    borderColor: "#262728",
+                                    boxShadow: "none",
+                                })
                             }
                         />
 
