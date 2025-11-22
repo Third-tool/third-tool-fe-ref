@@ -1,13 +1,57 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+
+  <!-- ✅ 파비콘: Vite 기본값 제거 -->
+  <link rel="icon" href="/favicon.ico" />
+  <!-- svg 파비콘을 쓴다면 위 대신 이걸로 -->
+  <!-- <link rel="icon" type="image/svg+xml" href="/favicon.svg" /> -->
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ✅ 검색 결과에 보일 대표 타이틀 -->
+  <title>Third Tool | the third tool 프로젝트</title>
+
+  <!-- ✅ 검색 결과 설명 -->
+  <meta
+          name="description"
+          content="Third Tool은 방대한 데이터 속에서도 망각을 줄이기 위한 기억 보조 학습 도구입니다. 3day 일반 학습과 Permanent 영구 학습, 개인화 알고리즘, 검색·Library 공유로 지식을 ‘익숙한 기억’으로 전환합니다."
+  />
+
+  <!-- ✅ (선택) 키워드 -->
+  <meta
+          name="keywords"
+          content="Third Tool, the third tool, thirdstool, 간격 반복, 장기기억, 학습 카드, 3day, Permanent, 개인화 알고리즘, 지식 관리, 검색 학습, 라이브러리 공유"
+  />
+
+  <!-- ✅ Open Graph: 카톡/트위터/디스코드/페북 등 -->
+  <meta property="og:site_name" content="Third Tool" />
+  <meta property="og:title" content="Third Tool | the third tool 프로젝트" />
+  <meta
+          property="og:description"
+          content="반복 주기 조정·사용자 주도 복습·검색을 통해 지식을 ‘익숙한 기억’으로 바꾸는 기억 보조 학습 시스템."
+  />
+  <meta property="og:url" content="https://thirdstool.com/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://thirdstool.com/og-image.png" />
+  <!-- og-image.png는 1200x630 권장 -->
+
+  <!-- ✅ Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Third Tool | the third tool 프로젝트" />
+  <meta
+          name="twitter:description"
+          content="3day / Permanent 루틴과 개인화 알고리즘으로 망각을 줄이는 학습 도구."
+  />
+  <meta name="twitter:image" content="https://thirdstool.com/og-image.png" />
+
+  <!-- ✅ (선택) 브라우저/구글에 표시될 앱 이름 힌트 -->
+  <meta name="application-name" content="Third Tool" />
+</head>
+
+<body>
+<div id="root"></div>
+<script type="module" src="/src/main.jsx"></script>
+</body>
 </html>
