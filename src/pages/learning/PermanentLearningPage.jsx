@@ -226,12 +226,9 @@ export default function PermanentLearningPage() {
                             style={sx.scrollArea}
                             className="ttt-hide-scroll"
                         >
-                            <div
-                                style={sx.textBlock}
-                                dangerouslySetInnerHTML={{
-                                    __html: safeHtml(showAnswer ? card.answer : card.question),
-                                }}
-                            />
+                            <div style={sx.textBlock}>
+                                {showAnswer ? card.answer : card.question}
+                            </div>
 
                             {(showAnswer ? card.answerImage : card.questionImage) && (
                                 <img

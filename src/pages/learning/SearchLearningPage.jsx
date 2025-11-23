@@ -170,10 +170,9 @@ export default function SearchLearningPage() {
                             transition={{ duration: .28 }}
                             style={sx.scrollArea}
                         >
-                            <div
-                                style={sx.textBlock}
-                                dangerouslySetInnerHTML={{ __html: safeHtml(showAnswer ? main.answer : main.question) }}
-                            />
+                            <div style={sx.textBlock}>
+                                {showAnswer ? main.answer : main.question}
+                            </div>
                             {/* 이미지가 있을 때만 img 태그 렌더링 */}
                             {(showAnswer ? main.answerImage : main.questionImage) && (
                                 <img

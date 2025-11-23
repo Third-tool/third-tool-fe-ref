@@ -225,12 +225,9 @@ export default function ThreeDayLearningPage() {
                             className="ttt-hide-scroll"
                         >
                             {/* ✅ showAnswer에 따라 텍스트 스위칭 */}
-                            <div
-                                style={sx.textBlock}
-                                dangerouslySetInnerHTML={{
-                                    __html: safeHtml(showAnswer ? card.answer : card.question),
-                                }}
-                            />
+                            <div style={sx.textBlock}>
+                                {showAnswer ? card.answer : card.question}
+                            </div>
 
                             {/* ✅ showAnswer에 따라 이미지 스위칭 */}
                             {(showAnswer ? card.answerImage : card.questionImage) && (
