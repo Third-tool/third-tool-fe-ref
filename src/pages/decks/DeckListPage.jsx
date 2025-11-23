@@ -103,15 +103,27 @@ export default function DeckListPage() {
 
     async function updateDeckName(deckId, name) {
         try {
-            const res = await fetchWithAccess(`${BASE_URL}/api/decks/${deckId}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name }),
-            });
-            if (!res.ok) throw new Error("덱 수정 실패");
-            await loadTopDecks();
+            const res = await fetchWithAccess(
+                `${BASE_URL}/api/decks/${deckId}/name`,
+                {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name }), // DeckNameUpdateRequestDto
+                }
+            );
+
+            if (!res.ok) {
+                const msg = await res.text();
+                throw new Error(msg || "덱 이름 수정 실패");
+            }
+
+            // DeckNameUpdateResponseDto { id, name } (필요하면 활용 가능)
+            // const updated = await res.json();
+
+            await loadTopDecks(); // ✅ 리로드(=다시 불러오기)
             alert("덱 이름이 수정되었습니다 ✅");
         } catch (err) {
+            console.error(err);
             alert("수정 실패: " + err.message);
         }
     }
@@ -122,12 +134,22 @@ export default function DeckListPage() {
     };
     const closeContextMenu = () => setContextMenu({ visible: false, x: 0, y: 0, deck: null });
     const openEditModal = () => {
-        setNewName(contextMenu.deck.name);
-        setEditDeck(contextMenu.deck);
-        closeContextMenu();
+        const deck = contextMenu.deck;
+        closeContextMenu();  // contextMenu 먼저 끄고
+
+        setTimeout(() => {   // 다음 렌더 사이클에서 모달 열기
+            setNewName(deck.name);
+            setEditDeck(deck);
+        }, 0);
     };
+
     const handleEditSubmit = async () => {
-        await updateDeckName(editDeck.id, newName);
+        const trimmed = newName.trim();
+        if (!trimmed) {
+            alert("덱 이름은 비어 있을 수 없습니다.");
+            return;
+        }
+        await updateDeckName(editDeck.id, trimmed);
         setEditDeck(null);
     };
 
