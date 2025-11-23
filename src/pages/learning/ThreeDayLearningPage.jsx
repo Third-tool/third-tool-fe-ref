@@ -54,20 +54,28 @@ export default function ThreeDayLearningPage() {
     async function loadCardData() {
         setLoading(true);
         setFeedbackSent(false);
+
         try {
+            // rankName 있으면 모든 요청에 붙여주는 공통쿼리
+            const rankQS = rankName ? `&rankName=${rankName}` : "";
+
+            // 🔹 메인 카드 URL
             const mainUrl = cardId
-                ? `${BASE_URL}/api/cards/${cardId}/learning/main?deckId=${deckId}&mode=${mode}`
+                ? `${BASE_URL}/api/cards/${cardId}/learning/main?deckId=${deckId}&mode=${mode}${rankQS}`
                 : `${BASE_URL}/api/cards/learning/random/main?deckId=${deckId}&mode=${mode}&rankName=${rankName || "SILVER"}`;
 
+            // 🔹 추천 카드 URL
             const recUrl = cardId
-                ? `${BASE_URL}/api/cards/${cardId}/learning/recommendations?deckId=${deckId}&mode=${mode}`
-                : `${BASE_URL}/api/cards/learning/random/recommendations?deckId=${deckId}&mode=${mode}`;
+                ? `${BASE_URL}/api/cards/${cardId}/learning/recommendations?deckId=${deckId}&mode=${mode}${rankQS}`
+                : `${BASE_URL}/api/cards/learning/random/recommendations?deckId=${deckId}&mode=${mode}&rankName=${rankName || "SILVER"}`;
 
+            // 🔹 병렬 호출
             const [mainData, recData] = await Promise.all([
                 fetchWithAccess(mainUrl).then((r) => r.json()),
                 fetchWithAccess(recUrl).then((r) => r.json()),
             ]);
 
+            // 🔹 메인 카드 포맷팅
             const formatted = {
                 id: mainData.id,
                 question: mainData.question,
@@ -83,6 +91,7 @@ export default function ThreeDayLearningPage() {
                     null,
             };
 
+            // 🔹 추천카드 포맷팅
             const normalizedRec = (recData || []).map((r) => ({
                 ...r,
                 _thumb:
@@ -105,8 +114,9 @@ export default function ThreeDayLearningPage() {
 
     async function loadRemainingCount() {
         try {
+            const rankQS = rankName ? `&rankName=${rankName}` : "";
             const res = await fetchWithAccess(
-                `${BASE_URL}/api/cards/learning/count?deckId=${deckId}&mode=${mode}`
+                `${BASE_URL}/api/cards/learning/count?deckId=${deckId}&mode=${mode}${rankQS}`
             );
             const data = await res.json();
             setRemaining(data.remainingCount ?? 0);
@@ -214,13 +224,21 @@ export default function ThreeDayLearningPage() {
                             style={sx.scrollArea}
                             className="ttt-hide-scroll"
                         >
-                            <div style={sx.textBlock} dangerouslySetInnerHTML={{ __html: safeHtml(card.question) }} />
+                            {/* ✅ showAnswer에 따라 텍스트 스위칭 */}
+                            <div
+                                style={sx.textBlock}
+                                dangerouslySetInnerHTML={{
+                                    __html: safeHtml(showAnswer ? card.answer : card.question),
+                                }}
+                            />
+
+                            {/* ✅ showAnswer에 따라 이미지 스위칭 */}
                             {(showAnswer ? card.answerImage : card.questionImage) && (
                                 <img
                                     src={showAnswer ? card.answerImage : card.questionImage}
                                     alt="card"
                                     style={sx.image}
-                                    onError={(e) => (e.currentTarget.style.display = 'none')}
+                                    onError={(e) => (e.currentTarget.style.display = "none")}
                                 />
                             )}
                         </motion.div>
