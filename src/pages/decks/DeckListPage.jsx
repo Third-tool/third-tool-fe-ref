@@ -130,7 +130,22 @@ export default function DeckListPage() {
 
     const handleContextMenu = (e, deck) => {
         e.preventDefault();
-        setContextMenu({ visible: true, x: e.pageX, y: e.pageY, deck });
+        e.stopPropagation();
+
+        const MENU_W = 160;  // 대충 메뉴 폭(너 스타일 minWidth 140이라 여유로 160)
+        const MENU_H = 120;  // 메뉴 높이(아이템 3개 기준)
+
+        let x = e.clientX;
+        let y = e.clientY;
+
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        // ✅ 오른쪽/아래 화면 밖으로 나가면 안쪽으로 밀어넣기
+        if (x + MENU_W > vw) x = vw - MENU_W - 8;
+        if (y + MENU_H > vh) y = vh - MENU_H - 8;
+
+        setContextMenu({ visible: true, x, y, deck });
     };
     const closeContextMenu = () => setContextMenu({ visible: false, x: 0, y: 0, deck: null });
     const openEditModal = () => {
@@ -619,7 +634,7 @@ const sx = {
         cursor: "pointer"
     },
     contextMenu: {
-        position: "absolute",
+        position: "fixed",
         background: "#222",
         color: "#fff",
         listStyle: "none",
