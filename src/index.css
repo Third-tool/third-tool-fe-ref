@@ -1,29 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
-    /* 다크 모드 색상 팔레트 */
-    --bg-main: #101010;
-    --bg-sidebar: #1a1a1a;
-    --bg-header: #101010;
-    --bg-card: #2c2c2c;
-    --bg-hover: #3a3a3a;
-    --bg-active: #4a4a4a;
+    --background: #f0f0f0;
+    --foreground: #101010;
+    --card: #ffffff;
+    --card-foreground: #101010;
+    --border: #e0e0e0;
+    --input: #e0e0e0;
+    --muted: #f5f5f5;
+    --muted-foreground: #6b6b6b;
+    --secondary: #e8e8e8;
+    --secondary-foreground: #101010;
+    --destructive: #ef4444;
+    --destructive-foreground: #fecaca;
+}
 
-    --text-primary: #f0f0f0;
-    --text-secondary: #a0a0a0;
-    --text-placeholder: #6b6b6b;
-
-    --border-color: #3f3f3f;
-
-    /* 사이드바 너비 변수 (이전에 수정한 값으로 반영) */
-    --sidebar-width: 206px;
-    --sidebar-width-collapsed: 60px;
-
-    --header-height: 64px;
-
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
-
-    background-color: var(--bg-main);
-    color: var(--text-primary);
+.dark {
+    --background: #101010;
+    --foreground: #f0f0f0;
+    --card: #2c2c2c;
+    --card-foreground: #f0f0f0;
+    --border: #3f3f3f;
+    --input: #3f3f3f;
+    --muted: #2c2c2c;
+    --muted-foreground: #a0a0a0;
+    --secondary: #3a3a3a;
+    --secondary-foreground: #f0f0f0;
+    --destructive: #ef4444;
+    --destructive-foreground: #fecaca;
 }
 
 * {
@@ -33,47 +39,10 @@
 }
 
 body {
-    overflow: hidden; /* 전체 페이지 스크롤 방지 */
-}
-
-/* ProtectedLayout.jsx가 렌더링할 메인 레이아웃
-  사이드바는 fixed로 고정하고,
-  메인 콘텐츠 영역은 사이드바 너비만큼 padding-left를 줍니다.
-*/
-.main-content-area {
-    position: relative;
-    height: 100vh;
-    /* 사이드바 너비만큼 왼쪽 여백을 줌 */
-    padding-left: var(--sidebar-width);
-    transition: padding-left 0.2s ease-out;
-    display: grid;
-    grid-template-rows: var(--header-height) 1fr; /* 헤더 / 콘텐츠 영역 */
-    overflow: hidden;
-}
-
-/* 사이드바가 접혔을 때의 메인 콘텐츠 영역 */
-.main-content-area.collapsed {
-    padding-left: var(--sidebar-width-collapsed);
-}
-
-/* AppHeader.jsx가 위치할 헤더 영역 */
-.main-header {
-    height: var(--header-height);
-    border-bottom: 1px solid var(--border-color);
-}
-
-/* HomePage.jsx 등이 위치할 페이지 콘텐츠 영역 (스크롤) */
-.page-content {
-    overflow-y: auto; /* 이 부분만 스크롤되도록 설정 */
-    overflow-x: hidden;
-    padding: 24px;
-}
-
-/* [추가] 가로 스크롤바 숨기기 유틸리티 클래스 */
-.no-scrollbar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-}
-.no-scrollbar::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--background);
+    color: var(--foreground);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
